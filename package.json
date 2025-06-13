@@ -1,0 +1,42 @@
+{
+  "name": "sheikh-chat",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@codemirror/lang-javascript": "^6.2.1",
+    "@codemirror/theme-one-dark": "^6.1.2",
+    "@codesandbox/sandpack-react": "^2.13.4",
+    "@codesandbox/sandpack-themes": "^2.0.21",
+    "@google/generative-ai": "^0.1.3",
+    "@monaco-editor/react": "^4.6.0",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@vercel/ai": "^3.0.2",
+    "ai": "^2.2.31",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "codemirror": "^6.0.1",
+    "lucide-react": "^0.359.0",
+    "next": "14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^2.2.1",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.67",
+    "@types/react-dom": "^18.2.22",
+    "autoprefixer": "^10.4.18",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.1.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.4.2"
+  }
+}
