@@ -8,15 +8,23 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '')
 export const runtime = 'edge'
 
 const buildGeminiPrompt = (messages: VercelChatMessage[]) => {
-  const systemPrompt = readFileSync(join(process.cwd(), 'system-prompt.md'), 'utf-8')
-  return messages.map((message) => ({
-    role: message.role === 'user' ? 'user' : 'model',
-    parts: message.content,
-  }))
+  const systemPrompt = `
+You are a helpful AI assistant that generates a single React component for a given prompt.
+Do not import React, as it is already available in the scope.
+Only output the code for the component, with no additional explanations.
+  `
+  return {
+    system: systemPrompt,
+    messages: messages.map((message) => ({
+      role: message.role === 'user' ? 'user' : 'model',
+      parts: message.content,
+    })),
+  }
 }
 
 export async function POST(req: Request) {
   const { messages } = await req.json()
+  const { system, messages: geminiMessages } = buildGeminiPrompt(messages)
   const model = genAI.getGenerativeModel({ 
     model: 'gemini-pro',
     generationConfig: {
@@ -25,46 +33,20 @@ export async function POST(req: Request) {
       topP: 0.8,
       topK: 40,
     },
+    systemInstruction: system,
   })
 
-  const geminiMessages = buildGeminiPrompt(messages)
-  const chat = model.startChat({
-    history: geminiMessages.slice(0, -1),
-    generationConfig: {
-      maxOutputTokens: 4096,
-    },
-  })
-
-  const lastMessage = messages[messages.length - 1].content
-  const result = await chat.sendMessageStream(lastMessage)
+  const lastMessage = geminiMessages[geminiMessages.length - 1].parts
+  const result = await model.generateContentStream(lastMessage)
   
-  // Create a TransformStream for converting the chunks
-  const encoder = new TextEncoder()
-  const decoder = new TextDecoder()
-  
-  let counter = 0
-  const stream = new TransformStream({
-    async transform(chunk, controller) {
-      const text = chunk.text()
-      if (counter < 1) {
-        // First chunk
-        controller.enqueue(encoder.encode('data: ' + JSON.stringify({ role: 'assistant', content: text }) + '\n\n'))
-      } else {
-        // Subsequent chunks
-        controller.enqueue(encoder.encode('data: ' + JSON.stringify({ content: text }) + '\n\n'))
+  const stream = new ReadableStream({
+    async start(controller) {
+      for await (const chunk of result.stream) {
+        controller.enqueue(chunk.text())
       }
-      counter++
+      controller.close()
     },
-    flush(controller) {
-      controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-    }
   })
 
-  return new Response(result.stream().pipeThrough(stream), {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  })
+  return new StreamingTextResponse(stream)
 }

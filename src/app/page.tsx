@@ -1,14 +1,24 @@
 'use client'
 
+import { useState } from 'react'
 import { ChatInput } from "@/components/chat-input"
-import { ChatMessages } from "@/components/chat-messages"
+import { CodeEditor } from "@/components/code-editor"
+import { CodePreview } from "@/components/code-preview"
 import { useChat } from "ai/react"
 
 export default function Home() {
-  const { messages, handleSubmit, isLoading } = useChat()
+  const [code, setCode] = useState('')
+  const { messages, handleSubmit, isLoading } = useChat({
+    onFinish: (message) => {
+      const codeBlock = message.content.match(/```(?:tsx|jsx)\n([\s\S]*?)```/);
+      if (codeBlock) {
+        setCode(codeBlock[1]);
+      }
+    }
+  })
 
   return (
-    <main className="container mx-auto flex min-h-screen flex-col">
+    <main className="container mx-auto grid h-screen grid-rows-[auto,1fr,auto] gap-4">
       <header className="sticky top-0 bg-background/80 backdrop-blur">
         <div className="border-b py-4">
           <h1 className="font-headline text-center text-2xl font-bold">
@@ -20,16 +30,17 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto">
-        {messages.length > 0 ? (
-          <ChatMessages messages={messages} />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-center text-muted-foreground">
-              Start a conversation with Sheikh Chat!
-            </p>
-          </div>
-        )}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-md border">
+          <CodeEditor
+            initialCode={code}
+            onChange={setCode}
+            language="typescript"
+          />
+        </div>
+        <div className="rounded-md border">
+          <CodePreview code={code} />
+        </div>
       </div>
 
       <div className="sticky bottom-0 bg-background">
